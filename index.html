@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>سحب سيارة فيراري</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #111;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            color: #ff2800; /* لون فيراري الأحمر */
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .wheel-box {
+            position: relative;
+            width: 400px;
+            height: 400px;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 25px rgba(255, 40, 0, 0.6);
+            border: 8px solid #fff200; /* أصفر فيراري */
+        }
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 30px solid #fff200;
+            z-index: 10;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #222;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #444;
+        }
+        textarea {
+            width: 250px;
+            height: 180px;
+            background: #111;
+            color: #fff;
+            border: 1px solid #ff2800;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 16px;
+            resize: none;
+        }
+        button {
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-update {
+            background-color: #444;
+            color: #fff;
+        }
+        .btn-update:hover { background-color: #666; }
+        .btn-spin {
+            background-color: #ff2800;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(255, 40, 0, 0.4);
+        }
+        .btn-spin:hover { background-color: #cc2000; }
+        #winnerModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            border: 4px solid #fff200;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 0 50px rgba(0,0,0,0.9);
+        }
+        #winnerName {
+            font-size: 36px;
+            color: #fff200;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏎️ السحب الكبير على سيارة فيراري 🏎️</h1>
+
+    <div class="container">
+        <div class="wheel-box">
+            <div class="pointer"></div>
+            <canvas id="wheel" width="400" height="400"></canvas>
+        </div>
+
+        <div class="controls">
+            <label for="namesInput">أدخل الأسماء (اسم في كل سطر):</label>
+            <textarea id="namesInput">أحمد محمد
+سارة عبدالله
+خالد العتيبي
+نورة السعيد
+فهد الدوسري
+ريم القحطاني</textarea>
+            <button class="btn-update" onclick="updateWheel()">تحديث الأسماء</button>
+            <button class="btn-spin" onclick="spinWheel()">ابدأ السحب! 🏁</button>
+        </div>
+    </div>
+
+    <div id="winnerModal">
+        <h2>🎉 مبروك الفائز بسيارة فيراري 🎉</h2>
+        <div id="winnerName"></div>
+        <button class="btn-spin" onclick="closeModal()">إغلاق</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        const colors = ['#ff2800', '#1a1a1a', '#fff200', '#333333'];
+        const textColors = ['#ffffff', '#ffffff', '#000000', '#ffffff'];
+        
+        let names = [];
+        let currentAngle = 0;
+        let isSpinning = false;
+
+        function updateWheel() {
+            const input = document.getElementById('namesInput').value;
+            names = input.split('\n').map(name => name.trim()).filter(name => name !== '');
+            if (names.length === 0) names = ['أضف أسماء'];
+            drawWheel();
+        }
+
+        function drawWheel() {
+            const numSegments = names.length;
+            const arcSize = (2 * Math.PI) / numSegments;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < numSegments; i++) {
+                const angle = currentAngle + i * arcSize;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + arcSize);
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // كتابة الأسماء
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + arcSize / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = textColors[i % textColors.length];
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText(names[i], radius - 25, 6);
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            if (isSpinning || names.length === 0) return;
+            isSpinning = true;
+
+            const spinDuration = 5000; // 5 ثواني
+            const extraSpins = Math.floor(Math.random() * 5) + 5; // من 5 إلى 10 لفات
+            const randomStop = Math.random() * 2 * Math.PI;
+            const totalRotation = extraSpins * 2 * Math.PI + randomStop;
+            
+            const startAngle = currentAngle;
+            const startTime = performance.now();
+
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / spinDuration, 1);
+                
+                // تباطؤ تدريجي واقعي
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+                currentAngle = startAngle + totalRotation * easeOut;
+                
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    determineWinner();
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function determineWinner() {
+            const numSegments = names.length;
+            const arcSize = (2 * Math.PI) / numSegments;
+            // المؤشر في الأعلى عند الزاوية 270 درجة (1.5 * PI)
+            const normalizedAngle = (1.5 * Math.PI - (currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const winnerIndex = Math.floor(normalizedAngle / arcSize);
+            
+            document.getElementById('winnerName').innerText = names[winnerIndex];
+            document.getElementById('winnerModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('winnerModal').style.display = 'none';
+        }
+
+        // تشغيل أولي
+        updateWheel();
+    </script>
+</body>
+</html>
